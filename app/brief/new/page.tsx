@@ -5,7 +5,7 @@ import { MaterialUploadField } from "@/components/brief/material-upload";
 import { draftStorage } from "@/lib/draft-storage";
 import type { AnalysisResult } from "@/lib/analysis-types";
 import type { FinalBriefResult } from "@/lib/final-brief-types";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 type CategoryKey = "ppt" | "editorial" | "branding" | "detail";
 type Question = { id: string; label: string; type: "chips" | "input" | "textarea" | "upload"; options?: string[] };
@@ -30,7 +30,7 @@ export default function NewBriefPage({ searchParams }: { searchParams?: { type?:
 
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [uploads, setUploads] = useState<Record<string, any[]>>({});
+  const [uploads, setUploads] = useState<Record<string, unknown>>({});
   const [urlInputs, setUrlInputs] = useState<Record<string, string>>({});
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
@@ -44,7 +44,7 @@ export default function NewBriefPage({ searchParams }: { searchParams?: { type?:
     const draft = draftStorage.load();
     if (!draft) return;
     setAnswers(draft.answers || {});
-    setUploads((draft.uploaded_files as Record<string, any[]>) || {});
+    setUploads((draft.uploaded_files as Record<string, unknown>) || {});
     setUrlInputs((draft.url_inputs as Record<string, string>) || {});
     setStep(Math.min(draft.current_step || 0, questions.length - 1));
   }, []);
@@ -59,7 +59,7 @@ export default function NewBriefPage({ searchParams }: { searchParams?: { type?:
           status: "draft",
           answers,
           custom_answers: {},
-          uploaded_files: uploads,
+          uploaded_files: uploads as Record<string, unknown[]>,
           url_inputs: urlInputs,
           current_step: step,
           updated_at: new Date().toISOString(),
@@ -114,7 +114,7 @@ export default function NewBriefPage({ searchParams }: { searchParams?: { type?:
 
           {current.type === "chips" && <div className="mt-3 flex flex-wrap gap-2">{current.options?.map((opt) => <button key={opt} onClick={() => setAnswers((p) => ({ ...p, [current.id]: opt }))} className={`rounded-full border px-3 py-1 text-sm ${answers[current.id] === opt ? "bg-brand-600 text-white" : "border-slate-200"}`}>{opt}</button>)}</div>}
           {current.type === "textarea" && <textarea className="mt-3 w-full rounded-lg border border-slate-200 p-2 text-sm" value={answers[current.id] || ""} onChange={(e) => setAnswers((p) => ({ ...p, [current.id]: e.target.value }))} />}
-          {current.type === "upload" && <div className="mt-3"><MaterialUploadField value={uploads[current.id] || []} onChange={(v) => setUploads((p) => ({ ...p, [current.id]: v }))} urlInput={urlInputs[current.id] || ""} setUrlInput={(v) => setUrlInputs((p) => ({ ...p, [current.id]: v }))} /></div>}
+          {current.type === "upload" && <div className="mt-3"><MaterialUploadField value={Array.isArray(uploads[current.id]) ? (uploads[current.id] as any[]) : []} onChange={(v) => setUploads((p) => ({ ...p, [current.id]: Array.isArray(v) ? v : [] }))} urlInput={urlInputs[current.id] || ""} setUrlInput={(v) => setUrlInputs((p) => ({ ...p, [current.id]: v }))} /></div>}
 
           <div className="mt-5 flex gap-2">
             <button className="rounded-lg border border-slate-200 px-3 py-2 text-sm" disabled={step === 0} onClick={() => setStep((s) => Math.max(0, s - 1))}>이전</button>
